@@ -2,7 +2,7 @@ defmodule Neotomex.Mixfile do
   use Mix.Project
   use Mix.Config
 
-  @github "https://github.com/jtmoulia/neotomex"
+  @github "https://github.com/drathier/neotomex"
 
   def project do
     [app: :neotomex,
