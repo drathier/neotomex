@@ -102,10 +102,20 @@ defmodule Neotomex.Grammar do
     @moduledoc """
     Exception raised on parse errors.
     """
-    defexception [error: nil, description: "parse error"]
+    defexception [error: nil, message: "parse error", state: nil, rest: nil]
 
     def message(exception) do
-      exception.description
+      if exception.rest != nil do
+        """
+        #{exception.message}
+
+        State: #{inspect exception.state}
+
+        Rest: #{inspect exception.rest}
+        """
+      else
+        exception.message
+      end
     end
   end
 
@@ -114,10 +124,10 @@ defmodule Neotomex.Grammar do
     @moduledoc """
     Exception raised on validation errors.
     """
-    defexception [error: nil, description: "validation error"]
+    defexception [error: nil, message: "validation error"]
 
     def message(exception) do
-      exception.description <> ": " <> error_to_string(exception.error)
+      exception.message <> ": " <> error_to_string(exception.error)
     end
 
     @doc false

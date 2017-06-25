@@ -106,8 +106,8 @@ defmodule Neotomex.ExGrammar do
         case parse(input) do
           {:ok, result} ->
             result
-          {:ok, _, _} ->
-            raise Neotomex.Grammar.ParseError, message: "parse incomplete"
+          {:ok, state, rest} = a ->
+            raise Neotomex.Grammar.ParseError, message: "parse incomplete", state: state, rest: rest
           :mismatch ->
             raise Neotomex.Grammar.ParseError, error: :mismatch, message: "parse failed"
           {:error, reason} ->
