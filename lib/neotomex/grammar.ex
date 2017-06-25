@@ -265,9 +265,9 @@ defmodule Neotomex.Grammar do
   def validate(%Neotomex.Grammar{:root => root,
                                  :definitions => definitions} = grammar)
       when root != nil and definitions != nil do
-    case Dict.has_key?(definitions, root) do
+    case Map.has_key?(definitions, root) do
       true ->
-        validate(grammar, Dict.to_list(definitions))
+        validate(grammar, Map.to_list(definitions))
       false ->
         {:error, {:missing, :root_definition}}
     end
@@ -283,23 +283,23 @@ defmodule Neotomex.Grammar do
   ## Private Functions
 
   @doc false
-  defp match({identifier, _} = expr, grammar, input) when is_atom(identifier) do
+  def match({identifier, _} = expr, grammar, input) when is_atom(identifier) do
     # If no transform is provided, default it to `nil`
     match({expr, nil}, grammar, input)
   end
 
-  defp match(nil, _, _),        do: {:error, :no_node_ref}
-  defp match(:empty, _, input), do: {:ok, nil, input}
+  def match(nil, _, _),        do: {:error, :no_node_ref}
+  def match(:empty, _, input), do: {:ok, nil, input}
 
   # Terminal nodes can be a char, string, or regex
-  defp match({{:terminal, char}, _} = expr_trans, _, <<char, rest :: binary>>)
+  def match({{:terminal, char}, _} = expr_trans, _, <<char, rest :: binary>>)
       when is_integer(char) do
     {:ok, {expr_trans, char}, rest}
   end
-  defp match({{:terminal, char}, _}, _, _) when is_integer(char) do
+  def match({{:terminal, char}, _}, _, _) when is_integer(char) do
     :mismatch
   end
-  defp match({{:terminal, terminal}, _} = expr_trans, _, input)
+  def match({{:terminal, terminal}, _} = expr_trans, _, input)
       when is_binary(terminal) do
     case String.split_at(input, String.length(terminal)) do
       {^terminal, rest} ->
@@ -308,7 +308,7 @@ defmodule Neotomex.Grammar do
         :mismatch
     end
   end
-  defp match({{:terminal, terminal}, _} = expr_trans, _, input) do
+  def match({{:terminal, terminal}, _} = expr_trans, _, input) do
     case Regex.run(terminal, input) do
       [""] ->
         # Make sure it's not just an empty match
@@ -327,7 +327,7 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:nonterminal, nonterminal}, _} = expr_trans,
+  def match({{:nonterminal, nonterminal}, _} = expr_trans,
              %Neotomex.Grammar{:definitions => definitions} = grammar, input) do
     case match(definitions[nonterminal], grammar, input) do
       {:ok, match, rest} ->
@@ -337,19 +337,19 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:sequence, _}, _} = expr_trans, grammar, input) do
+  def match({{:sequence, _}, _} = expr_trans, grammar, input) do
     match_sequence(expr_trans, grammar, input)
   end
 
-  defp match({{:priority, _}, _} = expr_trans, grammar, input) do
+  def match({{:priority, _}, _} = expr_trans, grammar, input) do
     match_priorities(expr_trans, grammar, input)
   end
 
-  defp match({{:zero_or_more, _}, _} = expr_trans, grammar, input) do
+  def match({{:zero_or_more, _}, _} = expr_trans, grammar, input) do
    match_zero_or_more(expr_trans, grammar, input)
   end
 
-  defp match({{:one_or_more, expression}, _} = expr_trans, grammar, input) do
+  def match({{:one_or_more, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
       {:ok, match, input} ->
         match_zero_or_more(expr_trans, grammar, input, [match])
@@ -358,7 +358,7 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:zero_or_one, expression}, _} = expr_trans, grammar, input) do
+  def match({{:zero_or_one, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
       :mismatch ->
         {:ok, {expr_trans, nil}, input}
@@ -367,7 +367,7 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:and, expression}, _} = expr_trans, grammar, input) do
+  def match({{:and, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
       {:ok, _, _} ->
         {:ok, {expr_trans, nil}, input}
@@ -376,7 +376,7 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:not, expression}, _} = expr_trans, grammar, input) do
+  def match({{:not, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
       {:ok, _, _} ->
         :mismatch
@@ -387,7 +387,7 @@ defmodule Neotomex.Grammar do
     end
   end
 
-  defp match({{:prune, expression}, _} = expr_trans, grammar, input) do
+  def match({{:prune, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
       {:ok, match, input} ->
         {:ok, {expr_trans, {:prune, match}}, input}
@@ -494,7 +494,7 @@ defmodule Neotomex.Grammar do
   @doc false
   defp validate_expr(%{:definitions => definitions}, {:nonterminal, id}) do
     # check that the referenced terminal exists in the grammar
-    case Dict.has_key?(definitions, id) do
+    case Map.has_key?(definitions, id) do
       true ->
         :ok
       false ->
