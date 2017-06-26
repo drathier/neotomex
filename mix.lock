@@ -1,3 +1,3 @@
-%{"dbg": {:hex, :dbg, "1.0.1"},
-  "earmark": {:hex, :earmark, "0.1.17"},
-  "ex_doc": {:hex, :ex_doc, "0.8.4"}}
+%{"dbg": {:hex, :dbg, "1.0.1", "9c29813e5df8b4d275325416523d511e315656b8ac27a60519791f9cf476d83d", [:mix], []},
+  "earmark": {:hex, :earmark, "0.1.17", "a2269e72ff85501bdb58c2de9edc0a9a17a4be2757883eed1f601b30494ed2bf", [:mix], []},
+  "ex_doc": {:hex, :ex_doc, "0.8.4", "c74a30b09627ff22a2bb7f75d3b75dec3aedb2bd434bb3009a73a40425c2315d", [:mix], [{:earmark, "~> 0.1.17 or ~> 0.2", [hex: :earmark, optional: true]}]}}

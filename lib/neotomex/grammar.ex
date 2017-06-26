@@ -307,15 +307,15 @@ defmodule Neotomex.Grammar do
     {:ok, {expr_trans, char}, rest}
   end
   def match({{:terminal, char}, _}, _, _) when is_integer(char) do
-    :mismatch
+    {:mismatch, "got #{inspect char}\n expected char"}
   end
   def match({{:terminal, terminal}, _} = expr_trans, _, input)
       when is_binary(terminal) do
     case String.split_at(input, String.length(terminal)) do
       {^terminal, rest} ->
         {:ok, {expr_trans, terminal}, rest}
-      {_, _} ->
-        :mismatch
+      {term, rest} ->
+        {:mismatch, "got #{inspect term}\n but expected #{inspect terminal}\n when reading `#{term<>rest}´\n"}
     end
   end
   def match({{:terminal, terminal}, _} = expr_trans, _, input) do
@@ -326,10 +326,10 @@ defmodule Neotomex.Grammar do
           true ->
             {:ok, {expr_trans, ""}, input}
           false ->
-            :mismatch
+            {:mismatch, "got `#{input}´\n expected it to match regex #{inspect terminal}\n"}
         end
       nil ->
-        :mismatch
+        {:mismatch, "got `#{input}´\n expected it to match regex #{inspect terminal}\n, but Regex.match? returned nil"}
       [match] ->
         # Two parts are necessary since the first is being trimmed away
         {^match, rest} = String.split_at(input, String.length(match))
@@ -370,7 +370,7 @@ defmodule Neotomex.Grammar do
 
   def match({{:zero_or_one, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
-      :mismatch ->
+      {:mismatch, _} ->
         {:ok, {expr_trans, nil}, input}
       otherwise ->
         otherwise
@@ -388,9 +388,9 @@ defmodule Neotomex.Grammar do
 
   def match({{:not, expression}, _} = expr_trans, grammar, input) do
     case match(expression, grammar, input) do
-      {:ok, _, _} ->
-        :mismatch
-      :mismatch ->
+      {:ok, state, rest} ->
+        {:mismatch, "expected the expression #{inspect expression, pretty: true}\n to not match, but it did. State: #{inspect state, pretty: true}\n, rest: `#{rest}´\n"}
+      {:mismatch, _} ->
         {:ok, {expr_trans, nil}, input}
       {:error, reason} ->
         {:error, reason}
@@ -432,13 +432,21 @@ defmodule Neotomex.Grammar do
   end
 
   @doc false
-  defp match_priorities(_, _, _, []), do: :mismatch
   defp match_priorities(expr_trans, grammar, input, [expression | expressions]) do
+    match_priorities5(expr_trans, grammar, input, [expression | expressions], [])
+  end
+
+  defp match_priorities5(expr_trans, grammar, input, [], tested_expressions), do: {:mismatch, "No expression matched for #{inspect expr_trans, pretty: true}\ninput: #{input}\nbut all options failed:\n#{
+        Enum.map(tested_expressions, fn {expr, msg} ->
+          "#{inspect expr, pretty: true}\n-> #{msg}"
+        end) |> Enum.reverse |> Enum.join("\n")
+      }"}
+  defp match_priorities5(expr_trans, grammar, input, [expression | expressions], tested_expressions) do
     case match(expression, grammar, input) do
       {:ok, match, input} ->
         {:ok, {expr_trans, match}, input}
-      :mismatch ->
-        match_priorities(expr_trans, grammar, input, expressions)
+      {:mismatch, mismatch_message} ->
+        match_priorities5(expr_trans, grammar, input, expressions, [{expression, mismatch_message}|tested_expressions])
       {:error, reason} ->
         {:error, reason}
     end
@@ -452,7 +460,7 @@ defmodule Neotomex.Grammar do
     case match(expression, grammar, input) do
       {:ok, match, input} ->
         match_zero_or_more(expr_trans, grammar, input, [match | acc])
-      :mismatch ->
+      {:mismatch, _} ->
         {:ok, {expr_trans, Enum.reverse(acc)}, input}
       {:error, reason} ->
         {:error, reason}

@@ -106,10 +106,10 @@ defmodule Neotomex.ExGrammar do
         case parse(input) do
           {:ok, result} ->
             result
-          {:ok, state, rest} = a ->
+          {:ok, state, rest} ->
             raise Neotomex.Grammar.ParseError, message: "parse incomplete", state: state, rest: rest
-          :mismatch ->
-            raise Neotomex.Grammar.ParseError, error: :mismatch, message: "parse failed"
+          {:mismatch, message} ->
+            raise Neotomex.Grammar.ParseError, error: :mismatch, message: "parse failed.\n#{message}"
           {:error, reason} ->
             # TODO -- human readable reason
             raise Neotomex.Grammar.ParseError, error: reason, message: "parse error"
@@ -180,7 +180,7 @@ defmodule Neotomex.ExGrammar do
   # Wraps the Neotomex parse_expression function's return values
   defp parse_expression(expr) do
     case Neotomex.PEG.parse_expression(expr) do
-      :mismatch ->
+      {:mismatch, _} ->
         throw {:error, :bad_expression}
       {:ok, expr} ->
         expr
